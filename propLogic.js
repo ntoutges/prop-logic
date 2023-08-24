@@ -350,7 +350,10 @@ export const executeRPLN = (tokens=[], variables={}) => { // Token[], Record<str
         break;
       // parentheses are not valid in RPLN
       default:
-        throw new Error("Unhandled type: " + token.type);
+        throw new PropError({
+          err: "Unhandled type: " + token.type,
+          data: token
+        });
     }
   }
 
@@ -499,11 +502,11 @@ class Stack {
 
   push(val) { this.arr.push(val); }
   pull() {
-    if (this.isEmpty()) throw new Error("Empty stack");
+    if (this.isEmpty()) throw new PropError({ err: "Empty stack, likely caused by invalid operator use", data: {} });
     return this.arr.pop();
   }
   get() { // pull, without removing from list
-    if (this.isEmpty()) throw new Error("Empty stack");
+    if (this.isEmpty()) throw new PropError({ err: "Empty stack, likely caused by invalid operator use", data: {} });
     return this.arr[this.arr.length-1];
   }
   clear() {
