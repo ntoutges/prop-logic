@@ -83,7 +83,7 @@ body {
 
 #truth-table {
   max-width: calc(100vw - 20px);
-  max-height: calc(100vh - 55px);
+  max-height: calc(100vh - 81px);
   margin: 8px;
   /* gap: 2px; */
   
@@ -111,18 +111,22 @@ body {
   text-align: center;
 }
 
-.truth-table-items.trues {
-  background-color: #b9ddb9;
+.trues {
+  background-color: #b9ddb9 !important;
 }
 
-.truth-table-items.falses {
-  background-color: #e3b5b5;
+.falses {
+  background-color: #e3b5b5 !important;
 }
 
 .truth-table-items {
   border-left: solid black 2px;
   border-top: solid black 2px;
   padding: 10px 10px 5px 10px;
+
+  position: relative;
+
+  user-select: none;
 }
 
 .truth-table-items.headers {
@@ -131,6 +135,72 @@ body {
 
 .truth-table-items.row-starts {
   border-left: none;
+}
+
+.truth-table-texts {
+  transform-origin: top left;
+  transform: scale(1);
+
+  position: relative;
+  left: 0px;
+  top: 0px;
+
+  transition: transform 200ms ease-in-out, top 200ms ease-in-out, left 200ms ease-in-out;
+}
+
+.truth-table-items:hover > .truth-table-texts,
+.truth-table-items.trues > .truth-table-texts,
+.truth-table-items.falses > .truth-table-texts {
+  transform: scale(0.5);
+  left: -5px;
+  top: -5px;
+}
+
+.truth-table-inputs {
+  /* display: none; */
+  position: absolute;
+  width: 100%;
+  height: 0px;
+
+  left: 0px;
+  bottom: 0px;
+
+  transition: height 200ms ease-in-out, width 150ms ease-in-out;
+}
+
+.truth-table-inputs > button {
+  width: 50%;
+  text-align: center;
+  padding: 0px;
+
+  top: 1px;
+  position: relative;
+
+  font-size: calc(var(--size) * 0.5);
+  font-family: var(--font);
+  font-weight: var(--weight);
+}
+
+.truth-table-inputs > button {
+  cursor: pointer;
+}
+
+.truth-table-items.trues > .truth-table-inputs > .inputs-trues,
+.truth-table-items.falses > .truth-table-inputs > .inputs-falses {
+  width: 100%;
+}
+
+.truth-table-items.falses > .truth-table-inputs > .inputs-trues,
+.truth-table-items.trues > .truth-table-inputs > .inputs-falses {
+  display: none;
+}
+
+
+.truth-table-items:hover > .truth-table-inputs,
+.truth-table-items.trues > .truth-table-inputs,
+.truth-table-items.falses > .truth-table-inputs {
+  /* display: block; */
+  height: 25px;
 }
 
 .token-elements {

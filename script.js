@@ -90,11 +90,14 @@ function generateTruthTable(tokens) {
 
   // generate variable headers
   for (let i in variables) {
-    generateGridItem(truthTable).innerText = variables[i];
+    const gridItemEl = generateGridItem(truthTable);
+    gridItemEl.querySelector(".truth-table-texts").innerText = variables[i];
+    insertInputIntoGridItem(gridItemEl);
   }
 
   const eqEl = generateGridItem(truthTable);
-  eqEl.append(generateEquationEl(tokens));
+  eqEl.querySelector(".truth-table-texts").append(generateEquationEl(tokens));
+  insertInputIntoGridItem(eqEl);
 
   // generate values of truth table
   const RPLN = propLogic.algToRPLN(tokens);
@@ -132,13 +135,43 @@ function generateTruthTableRow(values=[], parent) { // boolean
 
 function generateGridItem(parent) {
   const item = document.createElement("div");
+  const text = document.createElement("div");
   item.classList.add("truth-table-items");
+  text.classList.add("truth-table-texts");
+  
   if (gridIndex % gridWidth == 0) item.classList.add("row-starts");
   if (gridIndex < gridWidth) item.classList.add("headers");
   gridIndex++;
 
+  item.append(text);
   parent.append(item);
   return item;
+}
+
+function insertInputIntoGridItem(gridItemEl) {
+  const input = document.createElement("div");
+  input.classList.add("truth-table-inputs");
+
+  const setTrue = document.createElement("button");
+  setTrue.append("T");
+  setTrue.classList.add("inputs-trues");
+
+  const setFalse = document.createElement("button");
+  setFalse.append("F");
+  setFalse.classList.add("inputs-falses");
+
+  input.append(setTrue);
+  input.append(setFalse);
+
+  setTrue.addEventListener("click", () => {
+    gridItemEl.classList.toggle("trues");
+  });
+
+  setFalse.addEventListener("click", () => {
+    gridItemEl.classList.toggle("falses");
+  });
+  
+  gridItemEl.append(input);
 }
 
 function generateEquationEl(tokens) {
