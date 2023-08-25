@@ -4,20 +4,25 @@ const $ = document.querySelector.bind(document);
 
 const highlightColors = {
   "negation": "#ff0000",
-  "conjunction": "#279127",
+  "conjunction": "#6fed6f",
   "disjunction": "#2727b3",
   "conditional": "white",
+  "conditional-rev": "white",
   "biconditional": "#636363",
   "xor": "orange",
   "text": "#fc85ff",
   "white-space": "black",
   "parentheses-open": "yellow",
-  "parentheses-close": "yellow"
+  "parentheses-close": "yellow",
+  "true": "green",
+  "false": "red"
 }
 
-$("#input-text").addEventListener("focus", () => {
-  $("#input-underline").classList.add("focuses");
-});
+let setIndicies = {};
+
+$("#input-text").addEventListener("focus", focus);
+
+function focus() { $("#input-underline").classList.add("focuses"); }
 
 $("#input-text").addEventListener("blur", () => {
   $("#input-underline").classList.remove("focuses");
@@ -29,7 +34,33 @@ $("#input-text").addEventListener("keydown", (e) => {
   }
 });
 
-$("#input-text").addEventListener("input", () => {
+{
+  const parent = $("#help");
+  for (const category in propLogic.symbolsPossibilities) {
+    const symbols = propLogic.symbolsPossibilities[category];
+    const categoryEl = document.createElement("div");
+    categoryEl.classList.add("category");
+
+    const desc = document.createElement("span");
+    desc.innerText = category + ":";
+    categoryEl.append(desc);
+
+    for (const symbol of symbols) {
+      const el = document.createElement("span");
+      const spacer = document.createElement("span");
+      spacer.classList.add("no-select")
+      el.innerText = symbol;
+      spacer.innerText = " ";
+      categoryEl.append(el);
+      categoryEl.append(spacer);
+    }
+    parent.append(categoryEl);
+  }
+}
+
+$("#input-text").addEventListener("input", generateTokens);
+
+function generateTokens() {
   const input = $("#input-text").value;
   const tokens = propLogic.getTokensFromString(input);
   
@@ -45,17 +76,62 @@ $("#input-text").addEventListener("input", () => {
   
   setHighlights(indicies,colors);
   
+  let outputs = [];
+  let varCount = propLogic.getVars(tokens).length;
+
   try {
-    generateTruthTable(tokens);
+    outputs = generateTruthTable(tokens);
     $("#errs").innerHTML = ""; // clear error if no error
   }
   catch (err) {
     $("#truth-table").innerHTML = "";
     $("#errs").innerText = err.err;
+    varCount = 0; // error means no variables can be accounted for
   }
-});
 
- function setHighlights(indicies=[], colors=[]) {
+  const combinations = 2 ** varCount;
+  $("#combinations-count").innerText = varCount ? combinations : "";
+  $("#variables-count").innerText = varCount ? varCount : "";
+
+  if (outputs.length == 0) $("#proposition-type").innerText = "";
+  else {
+    let trues = 0;
+    outputs.forEach(bool => { if (bool) trues++; });
+
+    const propType = $("#proposition-type");
+    if (trues == 0) { // all outputs FALSE
+      propType.innerText = "Contradiction";
+      propType.setAttribute("title", "output is always FALSE");
+    }
+    else if (trues == outputs.length) { // all outputs TRUE
+      propType.innerText = "Tautology";
+      propType.setAttribute("title", "output is always TRUE");
+    }
+    else { // outputs are mixed between TRUE and FALSE
+      propType.innerText = "Contingency";
+      propType.setAttribute("title", "output varies based on inputs");
+    }
+
+    const RPLN_content = $("#rpln-content");
+    RPLN_content.innerHTML = ""; // clear
+
+    const RPLN_tokens = propLogic.algToRPLN(tokens)
+    for (const token of RPLN_tokens) {
+      const el = document.createElement("div");
+      el.classList.add("RPLN-tokens");
+      el.innerText = token.text;
+      // el.style.backgroundColor = highlightColors[token.type] ?? "transparent";
+      el.setAttribute("title", token.type);
+      RPLN_content.append(el);
+    }
+
+    for (const key in setIndicies) {
+      if (+key >= gridWidth) { delete setIndicies[key]; } // unusable and will just be confusing
+    }
+  }
+}
+
+function setHighlights(indicies=[], colors=[]) {
   const text = $("#input-text").value;
   const parent = $("#input-highlights");
   parent.innerHTML = ""; // clear
@@ -92,17 +168,18 @@ function generateTruthTable(tokens) {
   for (let i in variables) {
     const gridItemEl = generateGridItem(truthTable);
     gridItemEl.querySelector(".truth-table-texts").innerText = variables[i];
-    insertInputIntoGridItem(gridItemEl);
+    insertInputIntoGridItem(gridItemEl, +i);
   }
 
   const eqEl = generateGridItem(truthTable);
   eqEl.querySelector(".truth-table-texts").append(generateEquationEl(tokens));
-  insertInputIntoGridItem(eqEl);
+  insertInputIntoGridItem(eqEl, variables.length);
 
   // generate values of truth table
   const RPLN = propLogic.algToRPLN(tokens);
   const vars = {};
   const values = [];
+  const outputs = [];
   for (const variable of variables) { vars[variable] = false; }
 
   for (let i = 2 ** variables.length-1; i >= 0; i--) {
@@ -114,10 +191,13 @@ function generateTruthTable(tokens) {
       j--;
     }
 
-    values[variables.length] = propLogic.executeRPLN(RPLN, vars);
+    const output = !!propLogic.executeRPLN(RPLN, vars);
+    values[variables.length] = output;
+    outputs.push(output);
     generateTruthTableRow(values, truthTable);
   }
 
+  return outputs;
 }
 
 function generateTruthTableRow(values=[], parent) { // boolean
@@ -148,7 +228,8 @@ function generateGridItem(parent) {
   return item;
 }
 
-function insertInputIntoGridItem(gridItemEl) {
+function insertInputIntoGridItem(gridItemEl, index) {
+  gridItemEl.setAttribute("data-index", index);
   const input = document.createElement("div");
   input.classList.add("truth-table-inputs");
 
@@ -165,13 +246,67 @@ function insertInputIntoGridItem(gridItemEl) {
 
   setTrue.addEventListener("click", () => {
     gridItemEl.classList.toggle("trues");
+    
+    const index = gridItemEl.getAttribute("data-index");
+    if (gridItemEl.classList.contains("trues")) setIndicies[index] = true;
+    else delete setIndicies[index]
+    modifyTruthTable();
   });
 
   setFalse.addEventListener("click", () => {
     gridItemEl.classList.toggle("falses");
+
+    const index = gridItemEl.getAttribute("data-index");
+    if (gridItemEl.classList.contains("falses")) setIndicies[index] = false;
+    else delete setIndicies[index];
+    modifyTruthTable();
   });
+
+  // take advantage of event system in JS, event will only run AFTER block of code to generate truth table is finished
+  // as such, this runs after that
+  if (index in setIndicies) {
+    setTimeout(() => { (setIndicies[index] ? setTrue : setFalse).click(); });
+  }
   
   gridItemEl.append(input);
+}
+
+function modifyTruthTable() { // boolean[]
+  const parent = $("#truth-table");
+  
+  // unhide everything (clean start) -- skip headers because they don't matter
+  for (let i = gridWidth; i < parent.children.length; i++) {
+    parent.children[i].classList.remove("hiddens"); // reset to default CSS
+  }
+
+  // algorithm to hide inputs
+  for (let index in setIndicies) {
+    const isTrue = setIndicies[index];
+    const bitVal = gridWidth - index - 2;
+
+    if (bitVal < 0) { continue; } // ignore output, this will come up later
+
+    let i = 0;
+    for (let gI = gridWidth; gI < parent.children.length; gI += gridWidth) { // skip by rows
+      if ((i >> bitVal) % 2 == isTrue) { // hide these
+        for (let j = 0; j < gridWidth; j++) { // hide all in row
+          parent.children[gI+j].classList.add("hiddens"); // hide
+        }
+      }
+      i++;
+    }
+  }
+
+  if (!((gridWidth-1) in setIndicies)) return; // output row not set, ignore
+  const isTrue = setIndicies[gridWidth-1];
+
+  for (let i = 2*gridWidth-1; i < parent.children.length; i += gridWidth) {
+    if (parent.children[i].classList.contains(isTrue ? "falses" : "trues")) { // weed out anything that DOESN'T match
+      for (let j = -gridWidth+1; j <= 0; j++) {
+        parent.children[i+j].classList.add("hiddens");
+      }
+    }
+  }
 }
 
 function generateEquationEl(tokens) {
@@ -195,9 +330,13 @@ function generateEquationEl(tokens) {
     tokenEl.innerText = token.text;
     highlight.style.backgroundColor = highlightColors[token.type] ?? "transparent";
     highlight.innerText = token.text;
+    highlight.setAttribute("title", token.type);
     
     text.append(tokenEl);  
     highlights.append(highlight);
   }
   return output;
 }
+
+generateTokens(); // fill in default example
+focus();

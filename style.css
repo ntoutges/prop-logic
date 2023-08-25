@@ -2,6 +2,7 @@
   --font: 'Courier New', Courier, monospace;
   --size: 24px;
   --weight: bold;
+  --sidebar-width: 240px;
 }
 
 body {
@@ -9,6 +10,7 @@ body {
   width: 100vw;
   height: 100vh;
   background-color: cornsilk;
+  background-image: url("grid.jpg");
 }
 
 #input-container {
@@ -80,10 +82,9 @@ body {
   opacity: 0.3;
 }
 
-
 #truth-table {
-  max-width: calc(100vw - 20px);
   max-height: calc(100vh - 81px);
+  max-width: calc(100vw - 26px - var(--sidebar-width));
   margin: 8px;
   /* gap: 2px; */
   
@@ -108,7 +109,30 @@ body {
   font-family: var(--font);
   font-weight: var(--weight);
 
+  
   text-align: center;
+  overflow-x: visible;
+  /* overflow-y: hidden; */
+  height: 27px;
+  
+  border-left: solid black 2px;
+  border-top: solid black 2px;
+  padding: 10px 10px 5px 10px;
+
+  position: relative;
+  
+  user-select: none;
+  
+  transition: height 200ms, padding 200ms, border-width 100ms;
+
+  white-space: nowrap;
+}
+
+.truth-table-items.hiddens {
+  /* height: 0px;
+  padding: 0px;
+  border-width: 0px; */
+  display: none;
 }
 
 .trues {
@@ -117,16 +141,6 @@ body {
 
 .falses {
   background-color: #e3b5b5 !important;
-}
-
-.truth-table-items {
-  border-left: solid black 2px;
-  border-top: solid black 2px;
-  padding: 10px 10px 5px 10px;
-
-  position: relative;
-
-  user-select: none;
 }
 
 .truth-table-items.headers {
@@ -151,7 +165,7 @@ body {
 .truth-table-items:hover > .truth-table-texts,
 .truth-table-items.trues > .truth-table-texts,
 .truth-table-items.falses > .truth-table-texts {
-  transform: scale(0.5);
+  transform: scale(0.8);
   left: -5px;
   top: -5px;
 }
@@ -173,7 +187,7 @@ body {
   text-align: center;
   padding: 0px;
 
-  top: 1px;
+  top: -8px;
   position: relative;
 
   font-size: calc(var(--size) * 0.5);
@@ -200,7 +214,7 @@ body {
 .truth-table-items.trues > .truth-table-inputs,
 .truth-table-items.falses > .truth-table-inputs {
   /* display: block; */
-  height: 25px;
+  height: 17px;
 }
 
 .token-elements {
@@ -223,6 +237,7 @@ body {
   pointer-events: all;
   user-select: none;
   /* padding-left: 5px; */
+  word-wrap: none;
 }
 
 .highlights.token-highlights:first-child {
@@ -244,6 +259,11 @@ body {
 }
 
 #errs {
+  position: absolute;
+  left: 0px;
+  top: 55px;
+  width: calc(100vw - var(--sidebar-width) - 26px);
+
   background-color: #ffa9a9;
   padding: 5px;
   margin: 5px;
@@ -258,4 +278,133 @@ body {
 
 #errs:empty {
   display: none;
+}
+
+#text-insights {
+  position: absolute;
+  top: 55px;
+  right: 0px;
+
+  height: calc(100vh - 55px);
+  width: var(--sidebar-width);
+
+  background-color: #a0b0cf;
+  border-left: black 2px solid;
+  overflow: hidden;
+}
+
+
+#pico-copyright {
+  position: absolute;
+  bottom: 2px;
+  left: 50%;
+  white-space: nowrap;
+
+  transform: translateX(-50%);
+
+  font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-size: 15px;
+}
+
+.stats {
+  padding: 5px;
+  border-bottom: solid black 2px;
+
+  font-weight: bold;
+  color: #2300a7;
+  font-family: 'Times New Roman', Times, serif;
+}
+
+.stats:hover {
+  cursor: pointer;
+  background-color: #9fdbdd !important;
+}
+
+.stats::after {
+  font-weight: normal;
+  color: black;
+}
+
+#variables-count:not(:empty)::after {
+  content: " variable(s)";
+}
+
+#variables-count:empty::after {
+  content: "No variables entered";
+}
+
+#combinations-count:not(:empty)::after {
+  content: " combination(s)";
+}
+
+#combinations-count:empty::after {
+  content: "No variables entered";
+}
+
+#proposition-type:empty::after {
+  content: "Not a proposition"
+}
+
+#proposition-type {
+  text-align: center;
+  color: black;
+  background-color: #90cfa0;
+}
+
+#rpln-representation {
+  font-weight: normal;
+  font-style: italic;
+  color: black;
+}
+
+#rpln-content:empty::after {
+  content: "Not a proposition";
+  color: #714900;
+}
+
+.RPLN-tokens {
+  display: inline-block;
+  padding: 0px 2px 0px 2px;
+
+  /* font-size: var(--size); */
+  font-family: var(--font);
+  font-weight: var(--weight);
+  word-wrap: break-word;
+}
+
+.RPLN-tokens:hover {
+  cursor: pointer;
+  background-color: #e5cd99;
+  font-size: 1.2rem;
+}
+
+#help {
+  color: black;
+  font-weight: normal;
+}
+
+#help-title {
+  text-align: center;
+  margin-bottom: 3px;
+}
+
+.category {
+  border-top: dashed black 2px;
+  padding: 2px;
+
+  font-family: var(--font);
+  font-weight: var(--weight);
+}
+
+.category > span:first-child {
+  color: #651e7b;
+}
+
+.category > span:not(.no-select) {
+  padding: 2px;
+}
+
+.category > :not(.no-select):hover {
+  background-color: #e5cd99;
+  font-size: 1.2rem;
 }

@@ -1,20 +1,30 @@
 const symbols = {
+  "NOT": "negation",
   "~": "negation",
   "!": "negation",
-
+  
+  "AND": "conjunction",
   "^": "conjunction",
   "&": "conjunction",
 
-  "v": "disjunction",
+  "OR": "disjunction",
+  "V": "disjunction",
   "|": "disjunction",
 
   "->": "conditional",
-  // "<-": "conditional-reversed",
+  "<-": "conditional-rev",
   
   "<->": "biconditional",
   "==": "biconditional", // equivalent
 
+  "T": "true",
+  // "1": "true",
+  "F": "false",
+  // "0": "true",
+  
+  "XOR": "xor",
   "+": "xor",
+  "!=": "xor",
 
   // officially better than desmos, as I allow "[" and "]"!
   "(": "parentheses-open",
@@ -30,9 +40,12 @@ const symbolPriority = {
   "conjunction": 40,
   "disjunction": 30,
   "conditional": 20,
+  "conditional-rev": 20,
   "biconditional": 10,
 
   // less than no priority, don't try to check these in that system
+  "true": -1,
+  "false": -1,
   "text": -100,
   "section": -100
 }
@@ -49,6 +62,7 @@ const compoundSymbolsArr = [
   "disjunction",
   "conjunction",
   "conditional",
+  "conditional-rev",
   "biconditional",
   "xor"
 ];
@@ -58,9 +72,16 @@ const unarySymbols = {};
 const compoundSymbols = {};
 const symbolsArr = [];
 const symbolsFirstChar = {};
+const _symbolPossibilities = {};
 {
-  for (const symbol of unarySymbolsArr) { unarySymbols[symbol] = true; }
-  for (const symbol of compoundSymbolsArr) { compoundSymbols[symbol] = true; }
+  for (const symbol of unarySymbolsArr) {
+    unarySymbols[symbol] = true;
+    _symbolPossibilities[symbol] = [];
+  }
+  for (const symbol of compoundSymbolsArr) {
+    compoundSymbols[symbol] = true;
+    _symbolPossibilities[symbol] = [];
+  }
 
   for (const i in symbols) { symbolsArr.push(i); }
   symbolsArr.sort((a,b) => { return b.length - a.length });
@@ -70,7 +91,17 @@ const symbolsFirstChar = {};
     if (!(symbol[0] in symbolsFirstChar)) symbolsFirstChar[symbol[0]] = [];
     symbolsFirstChar[symbol[0]].push(+i);
   }
+  
+  for (const type in _symbolPossibilities) {
+    for (const symbol in symbols) {
+      if (symbols[symbol] == type) {
+        _symbolPossibilities[type].push(symbol);
+      }
+    }
+  }
 }
+
+export const symbolsPossibilities = _symbolPossibilities;
 
 export const getTokensFromString = (text) => {
   // essentially a greedy algorithm
@@ -126,13 +157,13 @@ export const getTokensFromString = (text) => {
 
 // remove whitespace
 export const trimTokens = (tokens=[]) => {
-  const trimmed = [];
-  for (const token of tokens) {
-    if (token.type != "white-space") {
-      trimmed.push(token);
+  for (let i = 0; i < tokens.length; i++) {
+    const token = tokens[i];
+    if (token.type == "white-space") {
+      tokens.splice(i,1);
+      i--;
     }
   }
-  return trimmed;
 }
 
 // returns a list of all variables: string[]
@@ -333,7 +364,12 @@ export const executeRPLN = (tokens=[], variables={}) => { // Token[], Record<str
         break;
       case "conditional": // reversed version should be squished into standard
         stack.push(
-          !stack.pull() & stack.pull() // order: Y,X // X -> Y // X && !Y
+          stack.pull() | !stack.pull() // order: Y,X // X -> Y // X && !Y
+        );
+        break;
+      case "conditional-rev": // but it wasn't (refer to 'case: "Conditional"')
+        stack.push(
+          !stack.pull() | stack.pull() // order: Y,X // X -> Y // X && !Y
         );
         break;
       case "biconditional": // order: Y,X // X == Y
@@ -345,6 +381,12 @@ export const executeRPLN = (tokens=[], variables={}) => { // Token[], Record<str
         stack.push(
           stack.pull() != stack.pull()
         );
+        break;
+      case "true": // essentially a variable
+        stack.push(true);
+        break;
+      case "false": // essentially a variable
+        stack.push(false);
         break;
       case "white-space": // ignore
         break;
