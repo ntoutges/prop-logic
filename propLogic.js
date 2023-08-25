@@ -39,6 +39,7 @@ const symbolPriority = {
   "negation": 50,
   "conjunction": 40,
   "disjunction": 30,
+  "xor": 25,
   "conditional": 20,
   "conditional-rev": 20,
   "biconditional": 10,
